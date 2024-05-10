@@ -137,6 +137,26 @@ class Movement extends Phaser.Scene {
             }
             return true;
         });
+
+        //enemy movement
+        this.enemies.forEach((enemy) => {
+            const directionX = my.sprite.character.x - enemy.x;
+            const directionY = my.sprite.character.y - enemy.y;
+    
+            const length = Math.sqrt(directionX * directionX + directionY * directionY);
+
+            //speed of enemies (increases every 20 points)
+            const incrementSpeed = Math.floor(this.myScore / 20) * 0.1;
+            const speed = 0.2 + incrementSpeed;
+
+            const velocityX = (directionX / length) * speed;
+            const velocityY = (directionY / length) * speed;
+    
+            //update enemy position
+            enemy.x += velocityX;
+            enemy.y += velocityY;
+
+        });
     
         //collision check
         this.projectiles.forEach((projectile) => {
@@ -151,7 +171,7 @@ class Movement extends Phaser.Scene {
                     //score update
                     this.myScore += 1;
                     this.scoreText.setText("Score: " + this.myScore);
-                    
+
                     //spawns a new enemy when the score increases
                     this.spawnEnemies(1);
                 }
