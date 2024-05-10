@@ -1,4 +1,3 @@
-//L11: ☄️ 1-D movement
 
 // debug with extreme prejudice
 "use strict"

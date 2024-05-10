@@ -3,15 +3,27 @@ class Movement extends Phaser.Scene {
  
     constructor(){
 
-        super("sceneName");
+        super("pathMaker");
         
         this.my = {sprite: {}};
 
-        //Create constants for the character location
+        //constants for the character location
         this.bodyX = 300;
         this.bodyY = 350;
 
         this.myScore = 0;  
+
+        //projectile array
+        this.projectiles = [];
+
+        //enemy array
+        this.enemies = [];
+
+        //bullet timings 
+        this.fireDelay = 200;
+        this.lastFired = 0;
+
+
     }
 
     preload() {
@@ -40,6 +52,13 @@ class Movement extends Phaser.Scene {
         //background image
         this.add.image(500, 290,'background');
 
+        //enemy path coordinates
+        this.enemyPath = [
+            20, 20,
+            100, 50,
+            300, 200, 
+        ];
+
         //keys
         this.aKey = this.input.keyboard.addKey('A');
         this.dKey = this.input.keyboard.addKey('D');
@@ -52,15 +71,10 @@ class Movement extends Phaser.Scene {
         my.sprite.character.setScale(0.75);
 
         //enemies
-        my.sprite.enemy = this.add.sprite(this.bodyX, this.bodyY, "bunnySprites", "flyMan_fly.png");
-        my.sprite.enemy.setScale(0.5);
-        my.sprite.enemy.scorePoints = 1;
-
-        //projectile array
-        this.projectiles = [];
-
-        //adding score
-        //my.text.score = this.add.bitmapText(580, 0, "HeartFont", "Score " + this.myScore);
+       // my.sprite.enemy = this.add.sprite(this.bodyX, this.bodyY, "bunnySprites", "flyMan_fly.png");
+        //my.sprite.enemy.setScale(0.5);
+        //my.sprite.enemy.visible = false;
+        //my.sprite.enemy.scorePoints = 1;
 
         //score text
         this.scoreText = this.add.text(game.config.width - 120, 5, "Score: " + this.myScore, {
@@ -86,8 +100,13 @@ class Movement extends Phaser.Scene {
             }
         }
 
-        //shooting projectiles
-        if (this.spaceKey.isDown) {
+        //s to start (spawn enemies)
+        if (this.sKey.isDown && this.enemies.length < 5) {
+            this.spawnEnemies(5 - this.enemies.length);
+        }
+
+        //shooting projectiles (with a delay!)
+        if (this.spaceKey.isDown&& this.time.now - this.lastFired > this.fireDelay) {
             let projectile = this.add.sprite(my.sprite.character.x, my.sprite.character.y - 50, "bunnySprites", "carrot.png");
             //rotating carrots
             projectile.setRotation(Phaser.Math.DegToRad(225));
@@ -95,12 +114,15 @@ class Movement extends Phaser.Scene {
             
             //adding projectiles
             this.projectiles.push(projectile);
+
+            this.lastFired = this.time.now;
         }
     
         //deleting off screen projectiles
         this.projectiles = this.projectiles.filter((projectile) => {
             if (projectile.y < 0 || projectile.y > game.config.height || !projectile.active) {
                 projectile.destroy();
+                console.log("Projectile destroyed!");
                 return false;
             }
             return true;
@@ -108,20 +130,35 @@ class Movement extends Phaser.Scene {
     
         //collision check
         this.projectiles.forEach((projectile) => {
-            if (my.sprite.enemy && my.sprite.enemy.active && this.collides(projectile, my.sprite.enemy)) {
-                console.log("Collision detected!");
-                //destroying projectile and enemy after collision
-                projectile.destroy();
-                my.sprite.enemy.destroy();
-                
-                //core update
-                this.myScore += 1;
-                this.scoreText.setText("Score: " + this.myScore);
-                
-            } else {
-                //moving projectile
-                projectile.y -= 5;
-            }
+            this.enemies.forEach((enemy) => {
+                if (enemy && enemy.active && this.collides(projectile, enemy)) {
+                    console.log("Collision detected!");
+                    // Destroying projectile and enemy after collision
+                    projectile.destroy();
+                    enemy.destroy();
+                    
+                    // Core update
+                    this.myScore += 1;
+                    this.scoreText.setText("Score: " + this.myScore);
+                }
+            });
+        
+            // Moving projectile
+            projectile.y -= 5;
         });
+    }
+
+    spawnEnemies(count) {
+        for (let i = 0; i < count; i++) {
+
+            //creating random start positions
+            const x = Phaser.Math.Between(100, 900);
+            const y = Phaser.Math.Between(100, 500); 
+    
+            const enemy = this.add.sprite(x, y, "bunnySprites", "flyMan_fly.png");
+            enemy.setScale(0.5);
+            this.enemies.push(enemy);
+        }
+    
     }
 }
