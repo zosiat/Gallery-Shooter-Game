@@ -23,7 +23,6 @@ class Movement extends Phaser.Scene {
         this.fireDelay = 200;
         this.lastFired = 0;
 
-
     }
 
     preload() {
@@ -43,6 +42,9 @@ class Movement extends Phaser.Scene {
     }
 
     create() {
+
+        //adding instructions under the game window
+        document.getElementById('description').innerHTML = '<h2>A: Move left | D: Move right | SPACE: Shoot | S: Start | ESC: Restart</h2>'
 
         let my = this.my;
 
@@ -105,6 +107,14 @@ class Movement extends Phaser.Scene {
             this.spawnEnemies(5 - this.enemies.length);
         }
 
+        //esc to restart (resetting score value and destroying all enemies)
+        if (this.escKey.isDown) {
+            this.myScore = 0;
+            this.scoreText.setText("Score: " + this.myScore);
+            this.enemies.forEach((enemy) => enemy.destroy());
+            this.enemies = [];    
+        }
+
         //shooting projectiles (with a delay!)
         if (this.spaceKey.isDown&& this.time.now - this.lastFired > this.fireDelay) {
             let projectile = this.add.sprite(my.sprite.character.x, my.sprite.character.y - 50, "bunnySprites", "carrot.png");
@@ -133,32 +143,33 @@ class Movement extends Phaser.Scene {
             this.enemies.forEach((enemy) => {
                 if (enemy && enemy.active && this.collides(projectile, enemy)) {
                     console.log("Collision detected!");
-                    // Destroying projectile and enemy after collision
+
+                    //destroying projectiles
                     projectile.destroy();
                     enemy.destroy();
                     
-                    // Core update
+                    //score update
                     this.myScore += 1;
                     this.scoreText.setText("Score: " + this.myScore);
+                    
+                    //spawns a new enemy when the score increases
+                    this.spawnEnemies(1);
                 }
             });
-        
-            // Moving projectile
+            //moving projectile
             projectile.y -= 5;
         });
     }
 
     spawnEnemies(count) {
         for (let i = 0; i < count; i++) {
-
-            //creating random start positions
-            const x = Phaser.Math.Between(100, 900);
-            const y = Phaser.Math.Between(100, 500); 
-    
-            const enemy = this.add.sprite(x, y, "bunnySprites", "flyMan_fly.png");
-            enemy.setScale(0.5);
-            this.enemies.push(enemy);
+                //creating random start positions
+                const x = Phaser.Math.Between(100, 900);
+                const y = Phaser.Math.Between(100, 500); 
+                //spawning enemy sprites
+                const enemy = this.add.sprite(x, y, "bunnySprites", "flyMan_fly.png");
+                enemy.setScale(0.5);
+                this.enemies.push(enemy);
         }
-    
     }
 }
