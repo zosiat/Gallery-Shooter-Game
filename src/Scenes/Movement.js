@@ -37,6 +37,13 @@ class Movement extends Phaser.Scene {
         this.load.image("titleText", "bunny battle title.png");
         this.load.atlasXML("bunnySprites", "spritesheet_jumper.png", "spritesheet_jumper.xml");
         //this.load.bitmapFont('HeartFont',"HeartFont_0.png","HeartFont_1.png","HeartFont.fnt");
+
+        //sounds
+        this.load.audio('scoreSound', 'DM-CGS-28.wav');
+        this.load.audio('deathSound', 'DM-CGS-36.wav');
+        this.load.audio('damageSound', 'DM-CGS-20.wav');
+        this.load.audio('shootSound', 'DM-CGS-46.wav');
+        this.load.audio('startSound', 'DM-CGS-23.wav');
     }
 
     collides(sprite1, sprite2) {
@@ -122,6 +129,11 @@ class Movement extends Phaser.Scene {
             this.spawnEnemies(5 - this.enemies.length);
             this.gameOverText.visible = false;
             my.sprite.titleText.visible = false;
+
+            //start audio
+            this.sound.play('startSound', {
+                volume: 0.5 
+             });
         }
 
         //esc to restart (resetting score value, HP, and destroying all enemies)
@@ -149,9 +161,14 @@ class Movement extends Phaser.Scene {
             //rotating carrots
             projectile.setRotation(Phaser.Math.DegToRad(225));
             projectile.setScale(0.75);
+
+            //this.sound.play('scoreSound');
             
             //adding projectiles
             this.projectiles.push(projectile);
+            this.sound.play('shootSound', {
+                volume: 0.1 
+             });
 
             this.lastFired = this.time.now;
         }
@@ -180,7 +197,7 @@ class Movement extends Phaser.Scene {
                 const length = Math.sqrt(directionX * directionX + directionY * directionY);
 
                 //speed of enemies (increases every 20 points)
-                const incrementSpeed = Math.floor(this.myScore / 20) * 0.1;
+                const incrementSpeed = Math.floor(this.myScore / 20) * 0.2;
                 const speed = 1 + incrementSpeed;
 
                 const velocityX = (directionX / length) * speed;
@@ -200,6 +217,11 @@ class Movement extends Phaser.Scene {
         
                     //destroying enemy
                     enemy.destroy();
+
+                    //audio
+                    this.sound.play('damageSound', {
+                        volume: 0.5 
+                     });
         
                     //health update here
                     this.myHealth -= 1;
@@ -212,8 +234,14 @@ class Movement extends Phaser.Scene {
         }); 
 
         //handing 0 health
-        if (this.myHealth <= 0) {
+        if (this.myHealth <= 0 && !this.gameOver) {
             this.gameOver = true;
+
+            //audio
+            this.sound.play('deathSound', {
+                volume: 0.1,
+                once: true 
+             });
     
             //game over text
             this.gameOverText.visible = true;
@@ -239,6 +267,11 @@ class Movement extends Phaser.Scene {
                     
                     //score update
                     this.myScore += 1;
+                    //score sound
+                    this.sound.play('scoreSound', {
+                        volume: 0.5 
+                     });
+                    //this.sound.play('scoreSound');
                     this.scoreText.setText("Score: " + this.myScore);
 
                     //spawns a new enemy when the score increases
