@@ -11,7 +11,9 @@ class Movement extends Phaser.Scene {
         this.bodyX = 300;
         this.bodyY = 350;
 
+        //player stats
         this.myScore = 0;  
+        this.myHealth = 5;
 
         //projectile array
         this.projectiles = [];
@@ -23,6 +25,7 @@ class Movement extends Phaser.Scene {
         this.fireDelay = 200;
         this.lastFired = 0;
 
+        this.gameOver = false;
     }
 
     preload() {
@@ -54,13 +57,6 @@ class Movement extends Phaser.Scene {
         //background image
         this.add.image(500, 290,'background');
 
-        //enemy path coordinates
-        this.enemyPath = [
-            20, 20,
-            100, 50,
-            300, 200, 
-        ];
-
         //keys
         this.aKey = this.input.keyboard.addKey('A');
         this.dKey = this.input.keyboard.addKey('D');
@@ -72,14 +68,22 @@ class Movement extends Phaser.Scene {
         my.sprite.character = this.add.sprite(this.bodyX + 100, this.bodyY + 350, "bunnySprites", "bunny1_ready.png");
         my.sprite.character.setScale(0.75);
 
-        //enemies
-       // my.sprite.enemy = this.add.sprite(this.bodyX, this.bodyY, "bunnySprites", "flyMan_fly.png");
-        //my.sprite.enemy.setScale(0.5);
-        //my.sprite.enemy.visible = false;
-        //my.sprite.enemy.scorePoints = 1;
+        this.gameOverText = this.add.text(game.config.width / 2, game.config.height / 2, "Game Over! Score: " + this.myScore, {
+            fontFamily: 'Times, serif',
+            fontSize: 48,
+            color: '#ff0000',
+            align: 'center',
+        }).setOrigin(0.5);
+        this.gameOverText.visible = false;
+750
+        //health text
+        this.healthText = this.add.text(850, 750, "Health: " + this.myHealth, {
+            fontFamily: 'Times, serif',
+            fontSize: 30,
+        })
 
         //score text
-        this.scoreText = this.add.text(game.config.width - 120, 5, "Score: " + this.myScore, {
+        this.scoreText = this.add.text(850, 10, "Score: " + this.myScore, {
             fontFamily: 'Times, serif',
             fontSize: 30,
         });
@@ -104,15 +108,23 @@ class Movement extends Phaser.Scene {
 
         //s to start (spawn enemies)
         if (this.sKey.isDown && this.enemies.length < 5) {
+            this.gameOver = false;
             this.spawnEnemies(5 - this.enemies.length);
+            this.gameOverText.visible = false;
         }
 
-        //esc to restart (resetting score value and destroying all enemies)
+        //esc to restart (resetting score value, HP, and destroying all enemies)
         if (this.escKey.isDown) {
             this.myScore = 0;
             this.scoreText.setText("Score: " + this.myScore);
+
+            this.myHealth = 5;
+            this.healthText.setText("Health: " + this.myHealth);
+
             this.enemies.forEach((enemy) => enemy.destroy());
-            this.enemies = [];    
+            this.enemies = [];
+
+            this.gameOverText.visible = false;
         }
 
         //shooting projectiles (with a delay!)
@@ -140,25 +152,60 @@ class Movement extends Phaser.Scene {
 
         //enemy movement
         this.enemies.forEach((enemy) => {
-            const directionX = my.sprite.character.x - enemy.x;
-            const directionY = my.sprite.character.y - enemy.y;
-    
-            const length = Math.sqrt(directionX * directionX + directionY * directionY);
+            //enemies freeze when game is over
+            if(this.gameOver == true){
+                enemy.x = 0;
+                enemy.y = 0;
+            }
+            else{
+                const directionX = my.sprite.character.x - enemy.x;
+                const directionY = my.sprite.character.y - enemy.y;
+        
+                const length = Math.sqrt(directionX * directionX + directionY * directionY);
 
-            //speed of enemies (increases every 20 points)
-            const incrementSpeed = Math.floor(this.myScore / 20) * 0.1;
-            const speed = 0.2 + incrementSpeed;
+                //speed of enemies (increases every 20 points)
+                const incrementSpeed = Math.floor(this.myScore / 20) * 0.1;
+                const speed = 1 + incrementSpeed;
 
-            const velocityX = (directionX / length) * speed;
-            const velocityY = (directionY / length) * speed;
-    
-            //update enemy position
-            enemy.x += velocityX;
-            enemy.y += velocityY;
-
+                const velocityX = (directionX / length) * speed;
+                const velocityY = (directionY / length) * speed;
+        
+                //update enemy position
+                enemy.x += velocityX;
+                enemy.y += velocityY;
+            }
         });
+
+        //enemy collision with player check
+        this.enemies.forEach((enemy) => {
+            this.enemies.forEach((enemy) => {
+                if (enemy && enemy.active && this.collides(my.sprite.character, enemy)) {
+                    console.log("Player collided with enemy!");
+        
+                    //destroying enemy
+                    enemy.destroy();
+        
+                    //health update here
+                    this.myHealth -= 1;
+                    this.healthText.setText("Health: " + this.myHealth);
+        
+                    //spawn new enemy
+                    this.spawnEnemies(1);
+                }
+            });
+        }); 
+
+        //handing 0 health
+        if (this.myHealth <= 0) {
+            this.gameOver = true;
     
-        //collision check
+            //game over text
+            this.gameOverText.visible = true;
+            this.gameOverText.setText("Game Over! Score: " + this.myScore);
+
+        }
+    
+        //projectile collision with enemy check
         this.projectiles.forEach((projectile) => {
             this.enemies.forEach((enemy) => {
                 if (enemy && enemy.active && this.collides(projectile, enemy)) {
@@ -181,11 +228,12 @@ class Movement extends Phaser.Scene {
         });
     }
 
+    //spawning enemy sprites
     spawnEnemies(count) {
         for (let i = 0; i < count; i++) {
                 //creating random start positions
-                const x = Phaser.Math.Between(100, 900);
-                const y = Phaser.Math.Between(100, 500); 
+                const x = Phaser.Math.Between(0, 1000);
+                const y = Phaser.Math.Between(-200, -100); 
                 //spawning enemy sprites
                 const enemy = this.add.sprite(x, y, "bunnySprites", "flyMan_fly.png");
                 enemy.setScale(0.5);
