@@ -34,6 +34,7 @@ class Movement extends Phaser.Scene {
         
         //loading assets
         this.load.image("background", "backgroundColorDesert.png");
+        this.load.image("titleText", "bunny battle title.png");
         this.load.atlasXML("bunnySprites", "spritesheet_jumper.png", "spritesheet_jumper.xml");
         //this.load.bitmapFont('HeartFont',"HeartFont_0.png","HeartFont_1.png","HeartFont.fnt");
     }
@@ -57,6 +58,10 @@ class Movement extends Phaser.Scene {
         //background image
         this.add.image(500, 290,'background');
 
+        //title image
+        my.sprite.titleText = this.add.sprite(game.config.width / 2, game.config.height / 2, 'titleText');
+        my.sprite.titleText.visible = true;
+
         //keys
         this.aKey = this.input.keyboard.addKey('A');
         this.dKey = this.input.keyboard.addKey('D');
@@ -67,6 +72,11 @@ class Movement extends Phaser.Scene {
         //character
         my.sprite.character = this.add.sprite(this.bodyX + 100, this.bodyY + 350, "bunnySprites", "bunny1_ready.png");
         my.sprite.character.setScale(0.75);
+
+        //character dead
+        my.sprite.characterDead = this.add.sprite(this.bodyX + 100, this.bodyY + 350, "bunnySprites", "bunny1_hurt.png");
+        my.sprite.characterDead.setScale(0.75);
+        my.sprite.characterDead.visible = false;
 
         this.gameOverText = this.add.text(game.config.width / 2, game.config.height / 2, "Game Over! Score: " + this.myScore, {
             fontFamily: 'Times, serif',
@@ -111,6 +121,7 @@ class Movement extends Phaser.Scene {
             this.gameOver = false;
             this.spawnEnemies(5 - this.enemies.length);
             this.gameOverText.visible = false;
+            my.sprite.titleText.visible = false;
         }
 
         //esc to restart (resetting score value, HP, and destroying all enemies)
@@ -124,7 +135,12 @@ class Movement extends Phaser.Scene {
             this.enemies.forEach((enemy) => enemy.destroy());
             this.enemies = [];
 
+            //hiding game over
             this.gameOverText.visible = false;
+
+            //swapping hurt and normal characters
+            my.sprite.character.visible = true;
+            my.sprite.characterDead.visible = false;
         }
 
         //shooting projectiles (with a delay!)
@@ -202,6 +218,12 @@ class Movement extends Phaser.Scene {
             //game over text
             this.gameOverText.visible = true;
             this.gameOverText.setText("Game Over! Score: " + this.myScore);
+
+            //setting dead character to same spot as normal
+            my.sprite.characterDead.setPosition(my.sprite.character.x, my.sprite.character.y);
+
+            my.sprite.character.visible = false;
+            my.sprite.characterDead.visible = true;
 
         }
     
